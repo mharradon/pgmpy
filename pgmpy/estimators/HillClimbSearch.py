@@ -63,8 +63,7 @@ class HillClimbSearch(StructureEstimator):
                     old_parents = model.get_parents(Y)
                     new_parents = old_parents + [X]
                     if max_indegree is None or len(new_parents) <= max_indegree:
-                        score_delta = local_score(Y, new_parents) - local_score(Y, old_parents)
-                        yield(operation, score_delta)
+                        yield lambda: (operation, local_score(Y, new_parents) - local_score(Y, old_parents))
 
         for (X, Y) in model.edges():  # (2) remove single edge
             operation = ('-', (X, Y))
@@ -72,8 +71,7 @@ class HillClimbSearch(StructureEstimator):
                 old_parents = model.get_parents(Y)
                 new_parents = old_parents[:]
                 new_parents.remove(X)
-                score_delta = local_score(Y, new_parents) - local_score(Y, old_parents)
-                yield(operation, score_delta)
+                yield lambda: (operation, (local_score(Y, new_parents) - local_score(Y, old_parents)))
 
         for (X, Y) in model.edges():  # (3) flip single edge
             new_edges = model.edges() + [(Y, X)]
@@ -87,13 +85,12 @@ class HillClimbSearch(StructureEstimator):
                     new_Y_parents = old_Y_parents[:]
                     new_Y_parents.remove(X)
                     if max_indegree is None or len(new_X_parents) <= max_indegree:
-                        score_delta = (local_score(X, new_X_parents) +
-                                       local_score(Y, new_Y_parents) -
-                                       local_score(X, old_X_parents) -
-                                       local_score(Y, old_Y_parents))
-                        yield(operation, score_delta)
+                        yield lambda: (operation, (local_score(X, new_X_parents) +
+                                                   local_score(Y, new_Y_parents) -
+                                                   local_score(X, old_X_parents) -
+                                                   local_score(Y, old_Y_parents)))
 
-    def estimate(self, start=None, tabu_length=0, max_indegree=None):
+    def estimate(self, start=None, tabu_length=0, max_indegree=None, epsilon=1e-8, njobs=1):
         """
         Performs local hill climb search to estimates the `BayesianModel` structure
         that has optimal score, according to the scoring method supplied in the constructor.
@@ -136,7 +133,16 @@ class HillClimbSearch(StructureEstimator):
         >>> est.estimate(max_indegree=1).edges()
         [('J', 'A'), ('B', 'J')]
         """
-        epsilon = 1e-8
+        if njobs > 1:
+          try:
+            import multiprocess
+          except:
+            raise Exception('Parallel processing requires the pathos multiprocess library.')
+          pool = multiprocess.Pool(njobs)
+          op_map = pool.map
+        else:
+          op_map = map
+
         nodes = self.state_names.keys()
         if start is None:
             start = BayesianModel()
@@ -151,7 +157,9 @@ class HillClimbSearch(StructureEstimator):
             best_score_delta = 0
             best_operation = None
 
-            for operation, score_delta in self._legal_operations(current_model, tabu_list, max_indegree):
+            ops = self._legal_operations(current_model, tabu_list, max_indegree)
+            
+            for operation, score_delta in op_map(lambda x: x(), ops):
                 if score_delta > best_score_delta:
                     best_operation = operation
                     best_score_delta = score_delta
