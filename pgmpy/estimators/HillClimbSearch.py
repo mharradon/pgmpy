@@ -62,7 +62,7 @@ class HillClimbSearch(StructureEstimator):
                 operation = ('+', (X, Y))
                 if operation not in tabu_list:
                     old_parents = model.get_parents(Y)
-                    new_parents = old_parents + [X]
+                    new_parents = list(old_parents) + [X]
                     if max_indegree is None or len(new_parents) <= max_indegree:
                         yield lambda: (operation, local_score(Y, new_parents) - local_score(Y, old_parents))
 
@@ -82,7 +82,7 @@ class HillClimbSearch(StructureEstimator):
                 if operation not in tabu_list and ('flip', (Y, X)) not in tabu_list:
                     old_X_parents = model.get_parents(X)
                     old_Y_parents = model.get_parents(Y)
-                    new_X_parents = old_X_parents + [Y]
+                    new_X_parents = list(old_X_parents) + [Y]
                     new_Y_parents = old_Y_parents[:]
                     new_Y_parents.remove(X)
                     if max_indegree is None or len(new_X_parents) <= max_indegree:
