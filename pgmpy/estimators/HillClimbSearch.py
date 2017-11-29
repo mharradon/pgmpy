@@ -64,7 +64,7 @@ class HillClimbSearch(StructureEstimator):
                     old_parents = list(model.get_parents(Y))
                     new_parents = list(old_parents) + [X]
                     if max_indegree is None or len(new_parents) <= max_indegree:
-                        yield lambda: (operation, local_score(Y, new_parents) - local_score(Y, old_parents))
+                        yield lambda operation=operation,Y=Y,new_parents=new_parents,old_parents=old_parents: (operation, local_score(Y, new_parents) - local_score(Y, old_parents))
 
         for (X, Y) in model.edges():  # (2) remove single edge
             operation = ('-', (X, Y))
@@ -72,7 +72,7 @@ class HillClimbSearch(StructureEstimator):
                 old_parents = list(model.get_parents(Y))
                 new_parents = list(old_parents)
                 new_parents.remove(X)
-                yield lambda: (operation, (local_score(Y, new_parents) - local_score(Y, old_parents)))
+                yield lambda operation=operation,Y=Y,new_parents=new_parents,old_parents=old_parents: (operation, (local_score(Y, new_parents) - local_score(Y, old_parents)))
 
         for (X, Y) in model.edges():  # (3) flip single edge
             new_edges = list(model.edges()) + [(Y, X)]
@@ -86,7 +86,9 @@ class HillClimbSearch(StructureEstimator):
                     new_Y_parents = list(old_Y_parents)
                     new_Y_parents.remove(X)
                     if max_indegree is None or len(new_X_parents) <= max_indegree:
-                        yield lambda: (operation, (local_score(X, new_X_parents) +
+                        yield lambda operation=operation,X=X,Y=Y,new_X_parents=new_X_parents,new_Y_parents=new_Y_parents, \
+                                                                 old_X_parents=old_X_parents,old_Y_parents=old_Y_parents: \
+                                      (operation, (local_score(X, new_X_parents) +
                                                    local_score(Y, new_Y_parents) -
                                                    local_score(X, old_X_parents) -
                                                    local_score(Y, old_Y_parents)))
@@ -152,8 +154,9 @@ class HillClimbSearch(StructureEstimator):
             best_operation = None
 
             ops = self._legal_operations(current_model, tabu_list, max_indegree)
+            ops = list(op_map(lambda x: x(), ops))
             
-            for operation, score_delta in op_map(lambda x: x(), ops):
+            for operation, score_delta in ops:
                 if score_delta > best_score_delta:
                     best_operation = operation
                     best_score_delta = score_delta
