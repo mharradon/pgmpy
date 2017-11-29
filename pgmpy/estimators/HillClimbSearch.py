@@ -158,6 +158,8 @@ class HillClimbSearch(StructureEstimator):
                     best_operation = operation
                     best_score_delta = score_delta
 
+            print(best_operation,best_score_delta)
+
             if best_operation is None or best_score_delta < epsilon:
                 break
             elif best_operation[0] == '+':

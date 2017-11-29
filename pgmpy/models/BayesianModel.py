@@ -17,6 +17,7 @@ from pgmpy.extern import six
 from pgmpy.extern.six.moves import range, reduce
 from pgmpy.models.MarkovModel import MarkovModel
 
+from pgmpy.utils.parallel_map import pmap
 
 class BayesianModel(DirectedGraph):
     """
