@@ -1,6 +1,8 @@
 pool = None
 
 def pmap(njobs=1):
+  global pool
+
   if njobs > 1:
     try:
       import multiprocess
