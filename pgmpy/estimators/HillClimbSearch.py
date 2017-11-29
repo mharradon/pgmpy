@@ -6,6 +6,7 @@ import networkx as nx
 from pgmpy.estimators import StructureEstimator, K2Score
 from pgmpy.models import BayesianModel
 
+from pgmpy.utils.parallel_map import pmap
 
 class HillClimbSearch(StructureEstimator):
     def __init__(self, data, scoring_method=None, **kwargs):
@@ -133,15 +134,8 @@ class HillClimbSearch(StructureEstimator):
         >>> est.estimate(max_indegree=1).edges()
         [('J', 'A'), ('B', 'J')]
         """
-        if njobs > 1:
-          try:
-            import multiprocess
-          except:
-            raise Exception('Parallel processing requires the pathos multiprocess library.')
-          pool = multiprocess.Pool(njobs)
-          op_map = pool.map
-        else:
-          op_map = map
+
+        op_map = pmap(njobs)
 
         nodes = self.state_names.keys()
         if start is None:

@@ -725,7 +725,7 @@ class BayesianModel(DirectedGraph):
         cpds_list = _estimator.get_parameters(**kwargs)
         self.add_cpds(*cpds_list)
 
-    def predict(self, data):
+    def predict(self, data, njobs=1):
         """
         Predicts states of all the missing variables.
 
@@ -766,6 +766,8 @@ class BayesianModel(DirectedGraph):
         """
         from pgmpy.inference import VariableElimination
 
+        op_map = pmap(njobs)
+
         if set(data.columns) == set(self.nodes()):
             raise ValueError("No variable missing in data. Nothing to predict")
 
@@ -773,14 +775,20 @@ class BayesianModel(DirectedGraph):
             raise ValueError("Data has variables which are not in the model")
 
         missing_variables = set(self.nodes()) - set(data.columns)
-        pred_values = defaultdict(list)
 
         # Send state_names dict from one of the estimated CPDs to the inference class.
         model_inference = VariableElimination(self, state_names=self.get_cpds()[0].state_names)
-        for index, data_point in data.iterrows():
-            states_dict = model_inference.map_query(variables=missing_variables, evidence=data_point.to_dict())
-            for k, v in states_dict.items():
-                pred_values[k].append(v)
+        
+        def get_states_dict(dat):
+            _, data_point = dat
+            return model_inference.map_query(variables=missing_variables, evidence=data_point.to_dict())
+
+        states_dicts = op_map(get_states_dict,list(data.iterrows()))
+        pred_values = defaultdict(list)
+        for state_dict in states_dicts:
+          for k, v in states_dict.items():
+            pred_values[k].append(v)
+
         return pd.DataFrame(pred_values, index=data.index)
 
     def predict_probability(self, data):
