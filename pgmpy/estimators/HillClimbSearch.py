@@ -61,7 +61,7 @@ class HillClimbSearch(StructureEstimator):
             if nx.is_directed_acyclic_graph(nx.DiGraph(list(model.edges()) + [(X, Y)])):
                 operation = ('+', (X, Y))
                 if operation not in tabu_list:
-                    old_parents = model.get_parents(Y)
+                    old_parents = list(model.get_parents(Y))
                     new_parents = list(old_parents) + [X]
                     if max_indegree is None or len(new_parents) <= max_indegree:
                         yield lambda: (operation, local_score(Y, new_parents) - local_score(Y, old_parents))
@@ -69,7 +69,7 @@ class HillClimbSearch(StructureEstimator):
         for (X, Y) in model.edges():  # (2) remove single edge
             operation = ('-', (X, Y))
             if operation not in tabu_list:
-                old_parents = model.get_parents(Y)
+                old_parents = list(model.get_parents(Y))
                 new_parents = list(old_parents)
                 new_parents.remove(X)
                 yield lambda: (operation, (local_score(Y, new_parents) - local_score(Y, old_parents)))
@@ -80,8 +80,8 @@ class HillClimbSearch(StructureEstimator):
             if nx.is_directed_acyclic_graph(nx.DiGraph(new_edges)):
                 operation = ('flip', (X, Y))
                 if operation not in tabu_list and ('flip', (Y, X)) not in tabu_list:
-                    old_X_parents = model.get_parents(X)
-                    old_Y_parents = model.get_parents(Y)
+                    old_X_parents = list(model.get_parents(X))
+                    old_Y_parents = list(model.get_parents(Y))
                     new_X_parents = list(old_X_parents) + [Y]
                     new_Y_parents = list(old_Y_parents)
                     new_Y_parents.remove(X)
