@@ -786,7 +786,7 @@ class BayesianModel(DirectedGraph):
 
         states_dicts = op_map(get_states_dict,list(data.iterrows()))
         pred_values = defaultdict(list)
-        for state_dict in states_dicts:
+        for states_dict in states_dicts:
           for k, v in states_dict.items():
             pred_values[k].append(v)
 
